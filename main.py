@@ -75,7 +75,7 @@ async def chat_with_ai(pdf_id: str, message: str):
             name="PDF Not Found Error",
         )
 
-    response = geminiAI_reference.generate_pdf_content_response(pdf_content.get('content'), message)
+    response = await geminiAI_reference.generate_pdf_content_response(pdf_content.get('content'), message)
 
     chat_id = await mongo_db_reference.save_chat(
         pdf_id=pdf_id,
