@@ -12,6 +12,6 @@ class GeminiAIManager:
         genai.configure(api_key=settings.GEMINI_API_KEY)
         self.model = genai.GenerativeModel(MODEL_NAME)
 
-    async def generate_pdf_content_response(self, pdf_content: str, message: str) -> str:
+    def generate_pdf_content_response(self, pdf_content: str, message: str) -> str:
         response = self.model.generate_content([message, pdf_content])
         return response.text

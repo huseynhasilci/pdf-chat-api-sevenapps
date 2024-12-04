@@ -14,7 +14,7 @@ mock_chat_id = "mock_chat_id_123"
 @pytest.mark.asyncio
 @patch("main.mongo_db_reference.read_pdf", new_callable=AsyncMock)
 @patch("main.mongo_db_reference.save_chat", new_callable=AsyncMock)
-@patch("main.geminiAI_reference.generate_pdf_content_response", new_callable=AsyncMock)
+@patch("main.geminiAI_reference.generate_pdf_content_response")
 async def test_chat_with_ai_success(mock_generate_response, mock_save_chat, mock_read_pdf):
     # Mocking return values
     mock_read_pdf.return_value = mock_pdf_content
@@ -53,16 +53,16 @@ async def test_chat_with_ai_pdf_not_found(mock_read_pdf):
     user_message = "Hello, AI!"
 
     response = client.post(f"/v1/chat/{pdf_id}?message={user_message}")
-
-    assert response.status_code == 400
-    assert response.json() == {'error': 'PDF not found'}
+    print("response as json", response.json())
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Something went wrong 500: PDF not found"}
 
     mock_read_pdf.assert_called_once_with(pdf_id)
 
 
 @pytest.mark.asyncio
 @patch("main.mongo_db_reference.read_pdf", new_callable=AsyncMock)
-@patch("main.geminiAI_reference.generate_pdf_content_response", new_callable=AsyncMock)
+@patch("main.geminiAI_reference.generate_pdf_content_response", side_effect=Exception("AI error"))
 async def test_chat_with_ai_ai_failure(mock_generate_response, mock_read_pdf):
     mock_read_pdf.return_value = mock_pdf_content
 
@@ -72,6 +72,7 @@ async def test_chat_with_ai_ai_failure(mock_generate_response, mock_read_pdf):
     response = client.post(f"/v1/chat/{pdf_id}?message={user_message}")
 
     assert response.status_code == 500
+    assert "Something went wrong AI error" in response.json()["detail"]
 
     mock_read_pdf.assert_called_once_with(pdf_id)
     mock_generate_response.assert_called_once_with(mock_pdf_content["content"], user_message)

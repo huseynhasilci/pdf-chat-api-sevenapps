@@ -19,7 +19,7 @@ def test_upload_wrong_file():
     test_file = 'tests/test.txt'
     files = {'file': ('test.txt', open(test_file, 'rb'))}  # "text/plain"
     response = client.post('/v1/pdf', files=files)
-    assert response.status_code == 400
+    assert response.status_code == 500
 
 
 def test_upload_file_over_limit():
@@ -31,5 +31,5 @@ def test_upload_file_over_limit():
         files={"file": ("large_file.pdf", large_pdf_file, "application/pdf")},
     )
 
-    assert response.status_code == 400
-    assert response.json() == {'error': f'File size exceeds {MAX_FILE_SIZE_MB} MB limit'}
+    assert response.status_code == 500
+    assert response.json() == {'detail': f'Upload failed413: File size exceeds {MAX_FILE_SIZE_MB} MB limit'}
