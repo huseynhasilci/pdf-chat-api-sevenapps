@@ -6,7 +6,7 @@ Proje içerisinde kullanılan teknolojiler:
 3. Kibana -> Elasticsearch üzerinden basılan logları göstermek için kullanılan arayüz. [Kibana](http://localhost:5601/app/discover#/ "Kibana Ui").
 
 Başlangıç olarak **.env** dosyası oluşturuyoruz ve içerisini şu şekilde dolduruyoruz:
->GEMINI_API_KEY=AIzaSyDpIJmED9GvY2-un0_5KyW84sFx0v5bmCo
+>GEMINI_API_KEY=YOUR GEMINI API KEY
 >
 >DATABASE_URL=mongodb://localhost:27017
 > 
