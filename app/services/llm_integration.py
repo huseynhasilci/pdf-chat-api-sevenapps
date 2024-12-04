@@ -1,7 +1,8 @@
 import google.generativeai as genai
 from app.config import GeminiAISettings
+from app.constans.ApplicationConstants import MODEL_NAME
 
-MODEL_NAME = "gemini-1.5-flash"
+
 settings = GeminiAISettings()
 
 

@@ -1,12 +1,16 @@
-import logging
 from app.schemas import ChatResponseSchema, PDFUploadResponseSchema
 from app.middlewares.error_handling import CustomErrorHandlingMiddleware
 from app.services.llm_integration import GeminiAIManager
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile
 from app.crud import MongoDBCrudOperations
 from app.services.pdf_extractor import extract_text
 from app.config import (
     MongoSettings
+)
+from app.exceptions.exceptions import (
+    FileTypeNotSupportedError,
+    FileSizeExceedError,
+    PDFNotFoundError,
 )
 
 MAX_FILE_SIZE_MB = 2
@@ -22,62 +26,66 @@ mongo_db_reference = MongoDBCrudOperations(
     collection_name=settings.COLLECTION_NAME
 )
 
-logger = logging.getLogger('uvicorn.error')
-logger.setLevel(logging.DEBUG)
 app = FastAPI()
 
-# app.add_middleware(CustomErrorHandlingMiddleware)
+app.add_middleware(CustomErrorHandlingMiddleware)
 
 
 @app.post("/v1/pdf")
 async def upload_pdf(file: UploadFile = File(...)):
-    try:
 
-        if not file.content_type.endswith('pdf'):
-            raise HTTPException(status_code=500, detail='File type not supported')
-
-        if file.size > MAX_FILE_SIZE_BYTES:
-            raise HTTPException(status_code=413, detail=f'File size exceeds {MAX_FILE_SIZE_MB} MB limit')
-
-        file_content = await extract_text(file)
-        file_id = await mongo_db_reference.create_pdf(
-            file.filename,
-            file_content.get('compressed_text'),
-            file_content.get('page_count'),
+    if not file.content_type.endswith('pdf'):
+        raise FileTypeNotSupportedError(
+            status_code=400,
+            message='File type not supported',
+            name="File Type Error"
         )
 
-        return PDFUploadResponseSchema(
-            file_id=file_id,
-            filename=file.filename,
-            page_count=file_content.get('page_count'),
-            message="File uploaded successfully",
+    if file.size > MAX_FILE_SIZE_BYTES:
+        raise FileSizeExceedError(
+            status_code=400,
+            message=f'File size exceeds {MAX_FILE_SIZE_MB} MB limit',
+            name="File Size Exceed Error",
         )
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload failed{str(e)}")
+    file_content = await extract_text(file)
+    file_id = await mongo_db_reference.create_pdf(
+        file.filename,
+        file_content.get('compressed_text'),
+        file_content.get('page_count'),
+    )
+
+    return PDFUploadResponseSchema(
+        file_id=file_id,
+        filename=file.filename,
+        page_count=file_content.get('page_count'),
+        message="File uploaded successfully",
+    )
 
 
 @app.post("/v1/chat/{pdf_id}")
 async def chat_with_ai(pdf_id: str, message: str):
-    try:
-        pdf_content = await mongo_db_reference.read_pdf(pdf_id)
 
-        if not pdf_content:
-            raise HTTPException(status_code=500, detail=f"PDF not found")
+    pdf_content = await mongo_db_reference.read_pdf(pdf_id)
 
-        response = geminiAI_reference.generate_pdf_content_response(pdf_content.get('content'), message)
-
-        chat_id = await mongo_db_reference.save_chat(
-            pdf_id=pdf_id,
-            user_message=message,
-            llm_response=response,
+    if not pdf_content:
+        raise PDFNotFoundError(
+            status_code=500,
+            message=f'PDF not found',
+            name="PDF Not Found Error",
         )
 
-        return ChatResponseSchema(
-            chat_id=chat_id,
-            pdf_id=pdf_id,
-            user_message=message,
-            model_response=response
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Something went wrong {str(e)}")
+    response = geminiAI_reference.generate_pdf_content_response(pdf_content.get('content'), message)
+
+    chat_id = await mongo_db_reference.save_chat(
+        pdf_id=pdf_id,
+        user_message=message,
+        llm_response=response,
+    )
+
+    return ChatResponseSchema(
+        chat_id=chat_id,
+        pdf_id=pdf_id,
+        user_message=message,
+        model_response=response
+    )

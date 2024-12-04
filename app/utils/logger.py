@@ -40,7 +40,6 @@ class ElasticsearchLogger:
         :return:
         """
         message['level'] = level
-        print("message teeeeest",message)
         message = json.dumps(message)
         self.es.index(index=self.index, document=message)
 

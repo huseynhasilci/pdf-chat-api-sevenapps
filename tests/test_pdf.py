@@ -9,6 +9,7 @@ client = TestClient(app)
 def test_upload_pdf():
     test_file = 'tests/Setophaga_angelae.pdf'
     files = {'file': ('Setophaga_angelae.pdf', open(test_file, 'rb'))}
+
     response = client.post('/v1/pdf', files=files)
     assert response.status_code == 200
     assert response.json()['message'] == 'File uploaded successfully'
@@ -16,7 +17,7 @@ def test_upload_pdf():
 
 def test_upload_wrong_file():
     test_file = 'tests/test.txt'
-    files = {'file': ('test.txt', open(test_file, 'rb'))}
+    files = {'file': ('test.txt', open(test_file, 'rb'))}  # "text/plain"
     response = client.post('/v1/pdf', files=files)
     assert response.status_code == 500
 
@@ -31,4 +32,4 @@ def test_upload_file_over_limit():
     )
 
     assert response.status_code == 500
-    assert response.json() == {'detail': 'Upload failed413: File size exceeds 2 MB limit'}
+    assert response.json() == {'detail': f'Upload failed413: File size exceeds {MAX_FILE_SIZE_MB} MB limit'}

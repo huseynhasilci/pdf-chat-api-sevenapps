@@ -2,10 +2,20 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
-from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi import HTTPException
 from app.utils.logger import ElasticsearchLogger
+from app.exceptions.exceptions import (
+    FileTypeNotSupportedError,
+    FileSizeExceedError,
+    PDFNotFoundError,
+)
 
 elastic_logger = ElasticsearchLogger()
+
+
+class CustomException(Exception):
+    def __init__(self, message: str):
+        self.message = message
 
 
 class CustomErrorHandlingMiddleware(BaseHTTPMiddleware):
@@ -34,13 +44,58 @@ class CustomErrorHandlingMiddleware(BaseHTTPMiddleware):
                         "method": request.method,
                         "url": request.url.__str__(),
                         "status_code": response.status_code,
-                        "message": "Pdf is uploaded successfully",
+                        "message": "Request success",
                     }
                 )
 
             return response
 
-        except StarletteHTTPException as exc:
+        except FileTypeNotSupportedError as exc:
+            elastic_logger.error(
+                {
+                    "request_id": request_id,
+                    "method": request.method,
+                    "url": request.url.__str__(),
+                    "exc_status_code": exc.status_code,
+                    "message": exc.message
+                }
+            )
+            return JSONResponse(
+                status_code=400,
+                content={"error": exc.message},
+            )
+
+        except FileSizeExceedError as exc:
+            elastic_logger.error(
+                {
+                    "request_id": request_id,
+                    "method": request.method,
+                    "url": request.url.__str__(),
+                    "exc_status_code": exc.status_code,
+                    "message": exc.message
+                }
+            )
+            return JSONResponse(
+                status_code=400,
+                content={"error": exc.message},
+            )
+
+        except PDFNotFoundError as exc:
+            elastic_logger.error(
+                {
+                    "request_id": request_id,
+                    "method": request.method,
+                    "url": request.url.__str__(),
+                    "exc_status_code": exc.status_code,
+                    "message": exc.message
+                }
+            )
+            return JSONResponse(
+                status_code=400,
+                content={"error": exc.message},
+            )
+
+        except HTTPException as exc:
             elastic_logger.error(
                 {
                     "request_id": request_id,
@@ -49,7 +104,6 @@ class CustomErrorHandlingMiddleware(BaseHTTPMiddleware):
                     "exc_status_code": exc.status_code,
                     "message": exc.detail
                 }
-                # f"HTTPException: {exc.detail} - Status: {exc.status_code}"
             )
             return JSONResponse(
                 status_code=exc.status_code,
