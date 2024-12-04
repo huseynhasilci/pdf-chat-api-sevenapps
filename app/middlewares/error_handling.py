@@ -9,13 +9,10 @@ from app.exceptions.exceptions import (
     FileSizeExceedError,
     PDFNotFoundError,
 )
+from app.config import ElasticSearchSettings
 
-elastic_logger = ElasticsearchLogger()
-
-
-class CustomException(Exception):
-    def __init__(self, message: str):
-        self.message = message
+settings = ElasticSearchSettings()
+elastic_logger = ElasticsearchLogger(es_host=settings.ELASTICSEARCH_HOTS)
 
 
 class CustomErrorHandlingMiddleware(BaseHTTPMiddleware):

@@ -5,14 +5,29 @@ Proje içerisinde kullanılan teknolojiler:
 2. ElasticSearch -> Log verilerinin tutulması için yüksek performanslı araç
 3. Kibana -> Elasticsearch üzerinden basılan logları göstermek için kullanılan arayüz. [Kibana](http://localhost:5601/app/discover#/ "Kibana Ui").
 
+## Pojeyi docker üzerinden başlatmak için gerekli olan komut
+> **docker-compose up --build**
+
+Bu cli komutunu konsola yazarak projeyi başlatabilirsiniz.
+
+Ayrıca Kibanaya gittikten sonra bir log yazıldığında data view oluşturmak gerekmektedir o da şu şekilde yapılabilir:
+![After Log](images/log_basildiktan_sonra.png)
+Create data view'a basarak
+![Creating](images/data_view_olusturma_sekli_kibana.png)
+Index adını girerek logları görmeye başlayabilirisiniz.
+
+## Uzun yoldan proje başlatmak istenirse izlenmesi gereken yollar (Docker'a yine ihtiyaç var ancak sadece ortamların kurulması gerekmekte)
+
 Başlangıç olarak **.env** dosyası oluşturuyoruz ve içerisini şu şekilde dolduruyoruz:
 >GEMINI_API_KEY=YOUR GEMINI API KEY
 >
->DATABASE_URL=mongodb://localhost:27017
+>DATABASE_URL=mongodb://mongodb:27017 # eğer ki docker-compose up --build ile başlatılmadıysa mongodb://localhost:27017 olarak değiştirin
 > 
 >DATABASE_NAME = pdf_database
 > 
 >COLLECTION_NAME = pdf_files # buradaki sadece collection için örnektir.
+> 
+> ELASTICSEARCH_HOTS = elasticsearch # eğer ki docker-compose up --build ile başlatılmadıysa localhost olarak değiştirin
 
 
 Projenin bağımlılıklarını yükleyerek başlıyoruz:
@@ -55,3 +70,5 @@ Projeye Ait Görseller
 ![Request Received Log Elastic And Kibana](images/request_received_log.png)
 #### Uploading PDF With API
 ![Uploading PDF With API](images/upload_pdf.png)
+#### File Size Error
+![File Size Error](images/file_size_error.png)
