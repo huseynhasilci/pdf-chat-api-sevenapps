@@ -23,14 +23,12 @@ class MongoDBCrudOperations:
         }
 
         pdf_document = PDFDocument(**pdf_document_dict)
-        print("pdf_document_dict", pdf_document)
-        # result = await self.collection.insert_one(pdf_document)
+
         result = await self.db.pdf_files.insert_one(pdf_document.dict(by_alias=True))
 
         return str(result.inserted_id)
 
     async def read_pdf(self, pdf_id: str) -> dict:
-        # pdf = await self.collection.find_one({"_id": ObjectId(pdf_id)})
         pdf = await self.db.pdf_files.find_one({"_id": ObjectId(pdf_id)})
 
         if pdf:

@@ -1,14 +1,11 @@
 import logging
 import json
-
 from typing import Any
-
 from elasticsearch import Elasticsearch
-from datetime import datetime
 
 
 class ElasticsearchLogger:
-    def __init__(self, es_host='localhost', es_port=9200, index='my_index'):
+    def __init__(self, es_host='elasticsearch', es_port=9200, index='my_index'):
         """
 
         :param es_host:
