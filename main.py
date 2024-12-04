@@ -1,4 +1,5 @@
 import logging
+from app.schemas import ChatResponseSchema, PDFUploadResponseSchema
 from app.middlewares.error_handling import CustomErrorHandlingMiddleware
 from app.services.llm_integration import GeminiAIManager
 from fastapi import FastAPI, File, UploadFile, HTTPException
@@ -25,12 +26,13 @@ logger = logging.getLogger('uvicorn.error')
 logger.setLevel(logging.DEBUG)
 app = FastAPI()
 
-app.add_middleware(CustomErrorHandlingMiddleware)
+# app.add_middleware(CustomErrorHandlingMiddleware)
+
 
 @app.post("/v1/pdf")
 async def upload_pdf(file: UploadFile = File(...)):
     try:
-        print("file size", file.size)
+
         if not file.content_type.endswith('pdf'):
             raise HTTPException(status_code=500, detail='File type not supported')
 
@@ -43,19 +45,39 @@ async def upload_pdf(file: UploadFile = File(...)):
             file_content.get('compressed_text'),
             file_content.get('page_count'),
         )
-        return {"message": f"File uploaded successfully with id of {file_id}"}
+
+        return PDFUploadResponseSchema(
+            file_id=file_id,
+            filename=file.filename,
+            page_count=file_content.get('page_count'),
+            message="File uploaded successfully",
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed{str(e)}")
 
 
-@app.get("/v1/pdf/{pdf_id}")
-async def chat_with_ai(pdf_id:  str, message: str):
-    pdf_content = await mongo_db_reference.read_pdf(pdf_id)
+@app.post("/v1/chat/{pdf_id}")
+async def chat_with_ai(pdf_id: str, message: str):
+    try:
+        pdf_content = await mongo_db_reference.read_pdf(pdf_id)
 
-    if not pdf_content:
-        raise HTTPException(status_code=404, detail=f"PDF not found")
+        if not pdf_content:
+            raise HTTPException(status_code=500, detail=f"PDF not found")
 
-    response = geminiAI_reference.generate_pdf_content_response(pdf_content.get('content'), message)
-    return {"response": response}
+        response = geminiAI_reference.generate_pdf_content_response(pdf_content.get('content'), message)
 
+        chat_id = await mongo_db_reference.save_chat(
+            pdf_id=pdf_id,
+            user_message=message,
+            llm_response=response,
+        )
+
+        return ChatResponseSchema(
+            chat_id=chat_id,
+            pdf_id=pdf_id,
+            user_message=message,
+            model_response=response
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Something went wrong {str(e)}")
